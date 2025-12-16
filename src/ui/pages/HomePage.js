@@ -1,7 +1,13 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, Page } from '@playwright/test';
 
 export class HomePage {
-  constructor(page) {
+  readonly page: Page;
+  readonly yourFeedTab;
+  readonly globalFeedTab;
+  readonly newArticleLink;
+  readonly articleTitle;
+
+  constructor(page: Page) {
     this.page = page;
     this.yourFeedTab = page.getByText('Your Feed');
     this.globalFeedTab = page.getByText('Global Feed');
@@ -34,7 +40,7 @@ export class HomePage {
   }
 
   async clickArticleTitle(title: string) {
-    await test.step(`Click article with title "${title}"`, async () => {
+    await test.step(`Click article title "${title}"`, async () => {
       await this.articleTitle(title).click();
     });
   }
@@ -57,4 +63,5 @@ export class HomePage {
     });
   }
 }
+
 
