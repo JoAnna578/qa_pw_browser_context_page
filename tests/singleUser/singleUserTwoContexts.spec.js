@@ -3,27 +3,32 @@ import { signUpUser } from '../../src/ui/actions/auth/signUpUser';
 import { createArticle } from '../../src/ui/actions/articles/createArticle';
 import { SignInPage } from '../../src/ui/pages/auth/SignInPage';
 import { HomePage } from '../../src/ui/pages/HomePage';
+import { SettingsPage } from '../../src/ui/pages/SettingsPage'; // dodane do zmiany hasła
 
 let signInPage;
 let homePageLoggedIn;
 let homePageLoggedOut;
 
 test.beforeEach(async ({ page1, page2, user, articleWithoutTags }) => {
-  // Create user
   await signUpUser(page1, user);
 
-  // Logged-in context
   signInPage = new SignInPage(page1);
   homePageLoggedIn = new HomePage(page1);
-
-  // Logged-out context
   homePageLoggedOut = new HomePage(page2);
 
-  // Create article as logged-in user
   await createArticle(page1, articleWithoutTags);
 });
 
-test('User can sign in', async ({ user }) => {
+// Zmieniony test logowania po zmianie hasła
+test('User can sign in with changed password', async ({ page1, user }) => {
+  // krok zmiany hasła
+  const settingsPage = new SettingsPage(page1);
+  await settingsPage.open();
+  const newPassword = 'newSecret123';
+  await settingsPage.changePassword(user.password, newPassword);
+  user.password = newPassword;
+
+  // logowanie z nowym hasłem
   await signInPage.open();
   await signInPage.fillEmailField(user.email);
   await signInPage.fillPasswordField(user.password);
@@ -32,6 +37,7 @@ test('User can sign in', async ({ user }) => {
   await homePageLoggedIn.assertYourFeedTabIsVisible();
 });
 
+// Test pozostaje praktycznie bez zmian
 test('User sees own article in Global Feed when not logged in', async ({
   articleWithoutTags,
 }) => {

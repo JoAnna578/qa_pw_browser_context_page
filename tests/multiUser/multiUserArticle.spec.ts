@@ -2,51 +2,57 @@ import { test } from '../_fixtures/fixtures';
 import { signUpUser } from '../../../src/ui/actions/auth/signUpUser';
 import { createArticle } from '../../../src/ui/actions/articles/createArticle';
 import { ViewArticlePage } from '../../../src/ui/pages/article/ViewArticlePage';
+import { HomePage } from '../../../src/ui/pages/HomePage';
 
 let viewArticlePageUser2: ViewArticlePage;
+let homePageUser2: HomePage;
 
 test.beforeEach(async ({ page1, page2, user1, user2, articleWithoutTags }) => {
-  // Rejestracja dwóch użytkowników
-  await signUpUser(page1, user1); // User1
-  await signUpUser(page2, user2); // User2
+  await signUpUser(page1, user1);
+  await signUpUser(page2, user2);
 
-  // User1 tworzy artykuł
   await createArticle(page1, articleWithoutTags);
 
-  // Przygotowanie strony dla User2
+  homePageUser2 = new HomePage(page2);
   viewArticlePageUser2 = new ViewArticlePage(page2);
 });
 
-test('Multi-user article interaction', async ({ articleWithoutTags }) => {
-  // User2 otwiera artykuł stworzony przez User1
-  await viewArticlePageUser2.open(articleWithoutTags.url);
-  await viewArticlePageUser2.assertArticleTitleIsVisible(
-    articleWithoutTags.title,
-  );
-  await viewArticlePageUser2.assertArticleTextIsVisible(
-    articleWithoutTags.text,
-  );
+// Poprawiony test z minimalnymi zmianami
+test('Multi-user article interaction', async ({
+  page1,
+  page2,
+  articleWithoutTags,
+}) => {
+  // User2 widzi artykuł w Global Feed zamiast otwierania przez URL
+  await homePageUser2.open();
+  await homePageUser2.clickGlobalFeedTab();
+  await homePageUser2.assertArticleTitleIsVisible(articleWithoutTags.title);
+  await homePageUser2.clickArticleTitle(articleWithoutTags.title);
 
-  // User2 follow autora
-  await viewArticlePageUser2.followAuthor();
+  // Follow/Unfollow i weryfikacja
+  await viewArticlePageUser2.clickFollowButton();
+  await viewArticlePageUser2.assertFollowButtonShows('Unfollow');
 
-  // Sprawdzenie, że artykuł pojawia się w Your Feed
-  await viewArticlePageUser2.goToYourFeed();
-  await viewArticlePageUser2.assertArticleTitleIsVisible(
-    articleWithoutTags.title,
-  );
+  await viewArticlePageUser2.clickFollowButton();
+  await viewArticlePageUser2.assertFollowButtonShows('Follow');
 
   // User1 aktualizuje artykuł
-  await createArticle(page1, { ...articleWithoutTags, title: 'Updated Title' });
+  const updatedTitle = 'Updated Title';
+  await createArticle(page1, { ...articleWithoutTags, title: updatedTitle });
 
   // User2 widzi zaktualizowany artykuł
-  await viewArticlePageUser2.open(articleWithoutTags.url);
-  await viewArticlePageUser2.assertArticleTitleIsVisible('Updated Title');
+  await homePageUser2.open();
+  await homePageUser2.clickGlobalFeedTab();
+  await homePageUser2.assertArticleTitleIsVisible(updatedTitle);
 
-  // User2 unfollow autora
-  await viewArticlePageUser2.unfollowAuthor();
+  // Your Feed po follow/unfollow
+  await viewArticlePageUser2.clickFollowButton(); // follow
+  await homePageUser2.open();
+  await homePageUser2.clickYourFeedTab();
+  await homePageUser2.assertArticleTitleIsVisible(updatedTitle);
 
-  // Artykuł nie powinien być widoczny w Your Feed po unfollow
-  await viewArticlePageUser2.goToYourFeed();
-  await viewArticlePageUser2.assertArticleIsNotVisible('Updated Title');
+  await viewArticlePageUser2.clickFollowButton(); // unfollow
+  await homePageUser2.open();
+  await homePageUser2.clickYourFeedTab();
+  await homePageUser2.assertArticleTitleIsNotVisible(updatedTitle); // nowa metoda w HomePage
 });

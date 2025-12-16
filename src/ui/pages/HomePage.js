@@ -6,7 +6,7 @@ export class HomePage {
     this.yourFeedTab = page.getByText('Your Feed');
     this.globalFeedTab = page.getByText('Global Feed');
     this.newArticleLink = page.getByRole('link', { name: 'New Article' });
-    this.articleTitle = title => page.getByRole('heading', { name: title });
+    this.articleTitle = (title: string) => page.getByRole('heading', { name: title });
   }
 
   async open() {
@@ -27,15 +27,34 @@ export class HomePage {
     });
   }
 
+  async clickYourFeedTab() {
+    await test.step(`Click the 'Your Feed' tab`, async () => {
+      await this.yourFeedTab.click();
+    });
+  }
+
+  async clickArticleTitle(title: string) {
+    await test.step(`Click article with title "${title}"`, async () => {
+      await this.articleTitle(title).click();
+    });
+  }
+
   async assertYourFeedTabIsVisible() {
     await test.step(`Assert the 'Your Feed' tab is visible`, async () => {
       await expect(this.yourFeedTab).toBeVisible();
     });
   }
 
-  async assertArticleTitleIsVisible(title) {
+  async assertArticleTitleIsVisible(title: string) {
     await test.step(`Assert article title "${title}" is visible`, async () => {
       await expect(this.articleTitle(title)).toBeVisible();
     });
   }
+
+  async assertArticleTitleIsNotVisible(title: string) {
+    await test.step(`Assert article title "${title}" is NOT visible`, async () => {
+      await expect(this.articleTitle(title)).not.toBeVisible();
+    });
+  }
 }
+
